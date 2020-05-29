@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+  <head>
+  	<title>MYyoutube</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+		
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/public/sidebar-01/css/style.css">
+    
+    <style>
+      video {
+      width: 100%;
+      height: auto;
+    }
+      </style>
+    
+    <% if (user) {%>
+      <script>
+        window.onbeforeunload = function() {
+              alert("chal raha hai")
+              var videoPlayer = document.getElementById("videoPlayer");
+              var watched = Math.floor(videoPlayer.currentTime);
+
+              if (watched > 0){
+                var videoId = document.getElementById("videoId").value;
+
+                var ajax = new XMLHttpRequest();
+                ajax.open("POST", "/save-history", true);
+                ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                ajax.onreadystatechange = function(){
+
+                if(this.readyState == 4 && this.status == 200){
+                  console.log(this.responseText);
+                }
+              }
+              ajax.send("videoId=" + videoId + "&watched=" + watched);
+            }
+
+            }
+      </script>
+      <% } %>
+
+    <script type="text/javascript">
+      function commentReply(node){
+        
+                  var commentId = node.getAttribute("data-comment-id");
+                  var y = "";
+                  y += '<div class="row">'
+                    y += '<div class="col-md-12">'
+                      y += '<form onsubmit="return postReply(this);">'
+                      y += '<input type="hidden" name="commentId" value="' + commentId + '">'
+                      y += '<div class="form-group">'
+                        y += '<label>Write Reply</label>'
+                        y += '<textarea class="form-control" name="reply"></textarea>'
+                      y += '</div>'
+                      y += '<button type="submit" class="btn btn-primary" data-comment-id="' + commentId + '">Post</button>'
+                      y += '</form>'
+                      y += '</div>'
+                      y += '</div>' 
+                  
+                  node.innerHTML = y;
+                  node.removeAttribute("onclick");
+                }
+
+      function postReply(form){
+        var commentId = form.commentId.value;
+        var reply = form.reply.value;
+        var ajax = new XMLHttpRequest();
+        ajax.open("POST", "/do-reply", true);
+        ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        ajax.onreadystatechange = function(){
+          if(this.readyState == 4 && this.status == 200){
+            var res = JSON.parse(this.responseText);
+            var html = "";
+            html += '<div class="row"><div class="col-1"><img src="' + res.user.image + '" height="20px" width="20px" style="border-radius:50%;" alt="..."></div> <div class="col-11"style="font-size: x-large;"><h5 ><b>' + res.user.name + '</b></h5><br/>' + form.reply.value + '</div>';
+            document.getElementById("replis").innerHTML += html;
+            form.reply.value = "";
+            
+          }
+        }
+      
+        ajax.send("commentId=" + commentId + "&reply=" + reply)
+        return false;
+      }
+    </script>
+  </head>
+  <body>
+    <%
+    months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    baseUrl = "http://localhost:3000/";
+%>
+
+<script type="text/javascript">
+      var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      var baseUrl = "http://localhost:3000/";
+</script>
+		
+		<div class="wrapper d-flex align-items-stretch">
+			<nav id="sidebar">
+				<div class="p-4 pt-5">
+        <center><img src="<%= baseUrl + user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+          <ul class="list-unstyled components mb-5">
+	          <li class="active">
+	            <a href="/index">Home</a>
+	          </li>
+            <li>
+              <a href="/upload" >Upload</a>
+	          </li>
+	          <li>
+              <a href="/index" >Subscribed Channel</a>
+	          </li>
+	          <li>
+              <a href="/index" >Liked Video's</a>
+	          </li>
+	          <li>
+              <a href="/index" >Disliked Video's</a>
+            </li>
+            <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
+            <li><a href="/watch-history">History</a></li>
+            <li><a href="/upload" >Notifications</a></li>
+            <li><a href="/index" >Settings</a></li>
+	        </ul>
+
+	        
+
+	      </div>
+    	</nav>
+
+        <!-- Page Content  -->
+      <div id="content" class="p-4 p-md-5">
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container-fluid">
+
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+              <i class="fa fa-bars"></i>
+              <span class="sr-only">Toggle Menu</span>
+            </button>
+            <button class="btn btn-dark d-inline-block d-lg-none ml-auto" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa fa-bars"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="nav navbar-nav ml-auto">
+                <script>
+                  function readNotification(self){
+                    var _id = self.getAttribute("data-id");
+                    var ajax = new XMLHttpRequest();
+                      ajax.open("POST", "/read-notification", true);
+                      ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      
+                      ajax.onreadystatechange = function(){
+                        if(this.readyState == 4 && this.status == 200){
+                          var res = JSON.parse(this.responseText)
+                          if(res.status == "error"){
+                            alert(res.message)
+                          }
+                        }
+                      }
+                      ajax.send("notificationId=" +  _id);
+                      return true;
+                  }
+                      var ajax = new XMLHttpRequest();
+                      ajax.open("GET", "/get_user", true);
+                      ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      
+                      ajax.onreadystatechange = function(){
+                        if(this.readyState == 4 && this.status == 200){
+                          var res = JSON.parse(this.responseText)
+                          if(res.status == "success"){
+                            window.user = res.user
+                            console.log(window.user)
+      
+                            var x = "";
+                            window.user = window.user.reverse()
+                            for(var a = 0; a< window.user.length; a++) {
+                              var notification = window.user[a];
+                              if(!notification.is_read){
+                                console.log(notification.is_read)
+                                if (notification.typ == "new_comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                                }
+                              }
+                            }
+                            document.getElementById("unread-notifications").innerHTML = x
+                          }else{
+                            alert(res.message)
+                          }
+                        }
+                      }
+                      ajax.send();
+                </script>
+                <li class="nav-item">
+                  <div class="dropdown">
+                    <a class="btn btn-light dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <svg class="bi bi-bell" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2z"/>
+                        <path fill-rule="evenodd" d="M8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                      </svg>
+                    </a>
+                  
+                    <div class="dropdown-menu" id="unread-notifications" aria-labelledby="dropdownMenuLink">
+                      <!-- <a class="dropdown-item" href="#">Action</a> -->
+                    </div>
+                  </div>
+                </li>
+                &nbsp;&nbsp;
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+        
+  <div class="container">
+    <div class="row">
+      <div class="col-8"><br/>
+          <h2><%= video.title %></h2> 
+            <p>Posted by <a href="/chanel/<%= video.user._id %>"><%= video.user.name %></a> 
+              On 
+              <%
+                  var createdAt = new Date(video.createdAt)
+                  var date = createdAt.getDate() + "";
+              %>
+              <%= date.padStart(2, "0") + " " + months[createdAt.getMonth()] + "," + createdAt.getFullYear() %>
+            </p>
+          <hr>
+          <input type="hidden" id="videoId" value="<%= video._id %>">
+          <input type="hidden" id="category" value="<%= video.category %>">
+          
+          <video id="videoPlayer" controls poster="<%= baseUrl + video.thumbnail %>" src="<%= baseUrl + video.filePath %>" height="500px"></video>
+            <div class="row">
+                <div class="col-8">
+                  <!-- <%= video.category %><br/>
+                  <%= video.description %> -->
+                  <p>
+                  &nbsp;&nbsp;<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8.06 2C3 2 0 8 0 8s3 6 8.06 6C13 14 16 8 16 8s-3-6-7.94-6zM8 12c-2.2 0-4-1.78-4-4 0-2.2 1.8-4 4-4 2.22 0 4 1.8 4 4 0 2.22-1.78 4-4 4zm2-4c0 1.11-.89 2-2 2-1.11 0-2-.89-2-2 0-1.11.89-2 2-2 1.11 0 2 .89 2 2z"></path></svg> <%= video.views %> views
+                  </p>
+                  <div class="row">
+                    <div class="col-2"><img src="<%= video.user.image %>" alt="User" height="50px" width="50px" style="border-radius: 50%;"></div>
+                    <div class="col-10"><b><%= video.user.name %></b><br/><p id="total-subscribers"><%= video.user.subscription.length %> Subscribers</p></div>
+                  </div>
+                  
+                </div>
+                <div class="col-4" >
+                  <p>
+                    
+                    <button class="btn btn-default" onclick="doLike()">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M15.98 8.17l-.97 5.95C14.84 15.5 13.13 16 12 16H5.69c-.2 0-.38-.05-.53-.14L3.72 15H2c-1.06 0-2-.94-2-2V9c0-1.06.94-2.02 2-2h2c.91 0 1.39-.45 2.39-1.55.91-1 .88-1.8.63-3.27-.08-.5.06-1 .42-1.42C7.83.29 8.42 0 9 0c1.83 0 3 3.71 3 5.01l-.02.98h2.04c1.16 0 1.95.8 1.98 1.97 0 .11-.02.21-.02.21zm-1.97-1.19h-1.99c-.7 0-1.03-.28-1.03-.97l.03-1.03c0-1.27-1.17-4-2-4-.5 0-1.08.5-1 1 .25 1.58.34 2.78-.89 4.14C6.11 7.25 5.36 8 4 8v6l1.67 1H12c.73 0 1.95-.31 2-1l.02-.02 1-6c-.03-.64-.38-1-1-1h-.01z"></path></svg>
+                      <span id="likes"><%= video.likers.length %></span>
+                    </button>
+                    <button class="btn btn-default" onclick="doDislike()">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M15.98 7.83l-.97-5.95C14.84.5 13.13 0 12 0H5.69c-.2 0-.38.05-.53.14L3.72 1H2C.94 1 0 1.94 0 3v4c0 1.06.94 2.02 2 2h2c.91 0 1.39.45 2.39 1.55.91 1 .88 1.8.63 3.27-.08.5.06 1 .42 1.42.39.47.98.76 1.56.76 1.83 0 3-3.71 3-5.01l-.02-.98h2.04c1.16 0 1.95-.8 1.98-1.97 0-.11-.02-.21-.02-.21zm-1.97 1.19h-1.99c-.7 0-1.03.28-1.03.97l.03 1.03c0 1.27-1.17 4-2 4-.5 0-1.08-.5-1-1 .25-1.58.34-2.78-.89-4.14C6.11 8.75 5.36 8 4 8V2l1.67-1H12c.73 0 1.95.31 2 1l.02.02 1 6c-.03.64-.38 1-1 1h-.01z"></path></svg>
+                      <span id="dislikes"><%= video.dislikers.length %></span>
+                    </button>
+                  </p>
+                  &nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-danger" onclick="doSubscribe()">Subscribe</button>
+                </div>  
+            </div>
+          <hr>
+          <div class="container">
+            <b>Category</b> - <%= video.category %><br/>
+            <b>Description</b> - <%= video.description %>
+
+          </div>
+          <hr/>
+            <div class="conatiner" id="comments">
+              <h4><b>Comments</b></h4>
+              <script>console.log(comments)</script>
+            <%
+                video.comments = video.comments.reverse();
+                comments.forEach(function(comment){
+                  
+              %>
+              
+                <div class="row">
+                  <div class="col-2">
+                    <img src="<%= comment.user.image %>" height="50px" width="50px" style="border-radius:50%;" alt="...">
+                  </div>
+                  <div class="col-10">
+                    <h5><b><%= comment.user.name %></b></h5><br/>
+                    <%= comment.content %>
+                      <div  id="replis">
+                        <div onclick="commentReply(this)" data-comment-id="<%= comment._id %>" style="cursor: pointer; float: right;">
+                          Reply
+                        </div>
+
+                        <% comment.replies.forEach(function (reply) { %>
+                          
+                        <div class="row">
+                          <div class="col-1">
+                            <img src="<%= baseUrl + reply.user.image %>" height="20px" width="20px" style="border-radius:50%;" alt="...">
+                          </div>
+                          <div class="col-11" style="font-size: small;">
+                            <h5><b><%= reply.user.subscription.length %></b></h5><br/>
+                                    <%= reply.content %>
+                          </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                  </div>
+                
+                </div>  
+                <hr/>
+              <% }) %>
+            </div>
+          <hr/>
+          <div class="container col-11">
+
+            <div class="card">
+              <div class="card-header">
+                Leave a Comment
+              </div>
+              <div class="card-body">
+            
+                  <form onsubmit="return postComment(this);">
+                  <div class="input-group ">
+                  
+                  <textarea type="text" class="form-control" name="comment" placeholder="Comment Here" aria-label="Recipient's username" aria-describedby="basic-addon2">
+                  </textarea> 
+                  </div>
+                  <input type="submit" class="btn btn-success" value="Post Comment">
+                </form>
+              </div>
+          </div>
+      </div>
+      </div>
+
+      <div class="col-4">
+        <br/>
+        <h4>Related Videos</h4>
+        <div class="container" id="related-videos">
+
+        </div>
+        <script>
+          var category = document.getElementById("category").value;
+          var videoId = document.getElementById("videoId").value;
+          var ajax = new XMLHttpRequest();
+          ajax.open("GET", "/get-related-videos/" + category + "/" + videoId , true);
+
+          ajax.onreadystatechange = function(){
+            if(this.readyState == 4 && this.status == 200){
+              var videos = JSON.parse(this.responseText);
+              var html = "";
+              for(var a=0; a < videos.length; a++){
+                var flag = false;
+                var createdAt = new Date(videos[a].createdAt);
+                var date = createdAt.getDate() + "";
+                date = date.padStart(2,"0") + " " + months[createdAt.getMonth()] + ", " + createdAt.getFullYear();
+                html += '<div class="row">';
+                  html += '<div class="col-8"><img  src="' + baseUrl + videos[a].thumbnail +'" height="125px" width="200px" style="width:100%; height=100%;"/></div>';
+                  html += '<div class="col-4">';
+                  html += '<h6><a href="/watch/' + videos[a]._id + '">' + videos[a].title +'</a><br/>'+ videos[a].views+ ' views</h6><br/>'+ '<p>' + videos[a].minutes + ":" + videos[a].seconds + "</p>";
+                html += '</div></div><hr/>';
+
+              }
+              console.log("bhenchod")
+              document.getElementById("related-videos").innerHTML += html;
+
+            }
+          }
+          ajax.send();
+        </script>
+      </div>
+</div>
+
+        <script type="text/javascript">
+
+
+            
+
+            function doSubscribe(){
+              var ajax = new XMLHttpRequest();
+              ajax.open("POST", "/do-subscribe", true);
+              ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+              ajax.onreadystatechange = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  var res = JSON.parse(this.responseText);
+                  if(res.status == "success"){
+                    var totalSubscribers = document.getElementById("toatl-subscribers").innerHTML;
+                    totalSubscribers++;
+                    document.getElementById("total-subscribers").innerHTML = totalSubscribers;
+                  } else {
+                    alert(res.message)
+                  }
+                }
+              }
+              var videoId = document.getElementById("videoId").value;
+              ajax.send("videoId="+ videoId)
+            }
+            
+
+            function doLike(){
+              var ajax = new XMLHttpRequest();
+              ajax.open("POST", "/do-like", true);
+              ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+              ajax.onreadystatechange = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  var res = JSON.parse(this.responseText);
+                  if(res.status == "success"){
+                    // update likes
+                    var likes = document.getElementById("likes").innerHTML;
+                    likes = parseInt(likes);
+                    likes++;
+                    document.getElementById("likes").innerHTML = likes;
+                  } else{
+                    alert(res.message);
+                  }
+                }
+              };
+
+              var videoId = document.getElementById("videoId").value;
+              ajax.send("videoId=" + videoId)
+            }
+
+            function doDislike(){
+              var ajax = new XMLHttpRequest();
+              ajax.open("POST", "/do-dislike", true);
+              ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+              ajax.onreadystatechange = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  var res = JSON.parse(this.responseText);
+                  if(res.status == "success"){
+                    // update likes
+                    var dislikes = document.getElementById("dislikes").innerHTML;
+                    dislikes = parseInt(dislikes);
+                    dislikes++;
+                    document.getElementById("dislikes").innerHTML = dislikes;
+                  } else{
+                    alert(res.message);
+                  }
+                }
+              };
+
+              var videoId = document.getElementById("videoId").value;
+              ajax.send("videoId=" + videoId)
+            }
+
+            function postComment(self){
+              
+              var ajax = new XMLHttpRequest();
+              ajax.open("POST", "/do-comment" , true);
+              ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+              ajax.onreadystatechange = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  //append in comments sections
+                  var res = JSON.parse(this.responseText);
+                  console.log(res.user.id,res.user._id,res.user.name)
+                  var html = "";
+                  html += '<div class="row"><div class="col-1">';
+                    html += ' <img src="'+ res.user.image  + '" height="50px" width="50px" style="border-radius:50%;" alt="...">';
+                    html += '</div><div class="col-11">'
+                      html += '<h5><b>'+  res.user.name + '</b></h5><br/>';
+                      html +=  self.comment.value;
+                      html += '<hr/></div></div>';
+
+                      document.getElementById("comments").innerHTML +=  html ;
+                      self.comment.value = "";
+                }
+              }
+              var videoId = document.getElementById("videoId").value;
+              ajax.send("videoId=" + videoId + "&comment=" + self.comment.value);
+              
+              return false;
+            }
+
+            
+        </script>
+ 
+  </div>
+
+      
+  <script src="/public/sidebar-01/js/jquery.min.js"></script>
+  <script src="/public/sidebar-01/js/popper.js"></script>
+  <script src="/public/sidebar-01/js/bootstrap.min.js"></script>
+  <script src="/public/sidebar-01/js/main.js"></script>
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <title>Video</title>
+    <style>
+      video {
+      width: 100%;
+      height: auto;
+    }
+      </style>
+    
+  </head>
+  <body>
+    <%
+        months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+        baseUrl = "http://localhost:3000/";
+    %>
+
+    <script type="text/javascript">
+          var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+          var baseUrl = "http://localhost:3000/";
+    </script>
+
+    <nav class="navbar navbar-expand-lg navbar-light justify-content-between" style="background-color: black;">
+          
+        <a class="navbar-brand" href="#" style="color:beige">Video</a>
+
+        
+        <form class="form-inline my-2 my-lg-0" >
+          <script>
+            function readNotification(self){
+              var _id = self.getAttribute("data-id");
+              var ajax = new XMLHttpRequest();
+                ajax.open("POST", "/read-notification", true);
+                ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+                ajax.onreadystatechange = function(){
+                  if(this.readyState == 4 && this.status == 200){
+                    var res = JSON.parse(this.responseText)
+                    if(res.status == "error"){
+                      alert(res.message)
+                    }
+                  }
+                }
+                ajax.send("notificationId=" +  _id);
+                return true;
+            }
+                var ajax = new XMLHttpRequest();
+                ajax.open("GET", "/get_user", true);
+                ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+                ajax.onreadystatechange = function(){
+                  if(this.readyState == 4 && this.status == 200){
+                    var res = JSON.parse(this.responseText)
+                    if(res.status == "success"){
+                      window.user = res.user
+                      console.log(window.user)
+
+                      var x = "";
+                      window.user = window.user.reverse()
+                      for(var a = 0; a< window.user.length; a++) {
+                        var notification = window.user[a];
+                        if(!notification.is_read){
+                          console.log(notification.is_read)
+                          if (notification.typ == "new_comment"){
+                            x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                          }
+                        }
+                      }
+                      document.getElementById("unread-notifications").innerHTML = x
+                    }else{
+                      alert(res.message)
+                    }
+                  }
+                }
+                ajax.send();
+          </script>
+          <div class="dropdown">
+            <a class="btn btn-light dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <svg class="bi bi-bell" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2z"/>
+                <path fill-rule="evenodd" d="M8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+              </svg>
+            </a>
+          
+            <div class="dropdown-menu" id="unread-notifications" aria-labelledby="dropdownMenuLink">
+             
+            </div>
+          </div>
+         
+          &nbsp;&nbsp;
+            <a class="btn btn-outline-warning my-2 my-sm-1" href="/logout">Logout</a>
+        </form>
+        
+      </nav>
+
+      <div class="row">
+        <div class="col-2 fixed" style="background-color: gainsboro;"><br/>
+          <div class="container">
+             <a href="/index" style="color: black;">Home</a>
+              <hr/>
+              <a href="/index" style="color: black;">History</a>
+              <hr/>
+              <a href="/index" style="color: black;">Subscribed Channel</a>
+              <hr/>
+              <a href="/index" style="color: black;">Liked Video's</a>
+              <hr/>
+              <a href="/index" style="color: black;">Disliked Video's</a>
+              <hr/>
+              <a href="/index" style="color: black;">My Channel</a>
+              <hr/>
+              <a href="/upload" style="color: black;">Upload</a>
+              <hr/>
+              <a href="/upload" style="color: black;">Notifications</a>
+              <hr/>
+              <a href="/index" style="color: black;">Settings</a>
+              <hr/>
+          
+          </div>
+        </div>
+        
+      
+
+
+ <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+  </body>
+</html> -->
