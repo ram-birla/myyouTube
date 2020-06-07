@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-  	<title>MYyoutube</title>
+  	<title>Pixplay</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -21,17 +21,19 @@
                 object-fit: cover;
             }
         </style>
+        
+   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   </head>
   <body>
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "http://localhost:3000/";
+    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
 				<div class="p-4 pt-5">
-        <center><img src="<%= baseUrl + user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+        <center><img src="<%= baseUrl + u.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
           <ul class="list-unstyled components mb-5">
 	          <li class="active">
 	            <a href="/index">Home</a>
@@ -40,18 +42,18 @@
               <a href="/upload" >Upload</a>
 	          </li>
 	          <li>
-              <a href="/index" >Subscribed Channel</a>
+              <a href="/my_subscription" >Subscribed Channel</a>
 	          </li>
 	          <li>
-              <a href="/index" >Liked Video's</a>
+              <a href="/liked" >Liked Video's</a>
 	          </li>
 	          <li>
-              <a href="/index" >Disliked Video's</a>
+              <a href="/disliked" >Disliked Video's</a>
             </li>
             <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
             <li><a href="/watch-history">History</a></li>
-            <li><a href="/upload" >Notifications</a></li>
-            <li><a href="/index" >Settings</a></li>
+            <li><a href="/all-notification" >Notifications</a></li>
+            <li><a href="/settings" >Settings</a></li>
 	        </ul>
 
 	        
@@ -110,8 +112,11 @@
                               var notification = window.user[a];
                               if(!notification.is_read){
                                 console.log(notification.is_read)
-                                if (notification.typ == "new_comment"){
-                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                                if (notification.typ == "New Comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Comment</a> '
+                                }
+                                if (notification.typ == "New Reply"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Reply</a> '
                                 }
                               }
                             }
@@ -147,7 +152,7 @@
         </nav>
 
    <div class="container">
-       <% if(user) { %>
+       <!-- <% if(user) { %>
         <form method="POST" action="/change-profile-picture" enctype="multipart/form-data" id="form-change-profile-picture">
             <input type="file" id="input-file-change-profile-picture" style="display: none;" accept="image/*" name="image" required onchange = "document.getElementById('form-change-profile-picture').submit()">
 
@@ -157,7 +162,7 @@
 
         </form>
 
-        <% } %>
+        <% } %> -->
 
         <div class="container-fluid">
             <div class="row">
@@ -172,8 +177,38 @@
                 </div>
                 <div class="col-md-8">
                   <h3><b><%= user.name %></b></h3>
-                  <p><%= user.subscription.length %> Subscribers</p>
+                  <p ><a id="total-subscribers"><%= user.subscription.length %></a> Subscribers</p> 
+                  <input type="hidden" id="user" value="<%= user._id %>" >
+
+                  <% if (chksubs == true) { %>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<button type="submit" class="btn btn-secondary" id="subsbutton" onclick="doUnSubscribe('<%= user._id %>','subsbutton')">Unsubscribe</button>
+                    <% } else { %>
+                  &nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-danger" id="subsbutton" onclick="doSubscribe('<%= user._id %>','subsbutton')">Subscribe</button>
+                  <% } %>
                 </div>
+              </div>
+              <hr/>
+              <h3>Playlist</h3>
+              <div class="row">
+                <%
+                  user.playlists = user.playlists.reverse();
+                  user.playlists.forEach(function (playlist) {
+                %>
+                <div class="col-md-4">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <h3><%= playlist.title %></h3>
+                    </div>
+                    <div class="card-footer">
+                      <% if (playlist.videos.length > 0) {%>
+                        <a href="/playlist/<%= playlist._id %>/<%= playlist.videos[0]._id %>" class="btn btn-warning">View</a>  
+                      <% } else { %>
+                        <span>Playlist is empty</span>  
+                      <% } %>
+                    </div>
+                  </div>
+                </div>
+                <% }) %>
               </div>
               <hr/>
               <h2>My Videos</h2>
@@ -203,6 +238,58 @@
 
 </div>
    </div>
+   <script>
+     
+  
+     function doSubscribe(user_id, btnid){
+              var ajax = new XMLHttpRequest();
+              ajax.open("POST", "/do-subscribe-user", true);
+              ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+              ajax.onreadystatechange = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  var res = JSON.parse(this.responseText);
+                  if(res.status == "success"){
+                    var totalSubscribers = document.getElementById("total-subscribers").innerHTML;
+                    totalSubscribers++;
+                    document.getElementById("total-subscribers").innerHTML = totalSubscribers;
+                    document.getElementById(btnid).innerHTML = 'Unsubscribe'
+                    document.getElementById(btnid).className= 'btn btn-secondary'
+                    document.getElementById(btnid).onclick = ()=>doUnSubscribe(user_id,btnid)
+                  } else {
+                    alert(res.message)
+                  }
+                }
+              }
+              var userId = document.getElementById("user").value;
+              ajax.send("userId="+ userId)
+            }
+
+            function doUnSubscribe(user_id, btnid){
+              var ajax = new XMLHttpRequest();
+              ajax.open("POST", "/do-unsubscribe-user", true);
+              ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+              ajax.onreadystatechange = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  var res = JSON.parse(this.responseText);
+                  if(res.status == "success"){
+                    var totalSubscribers = document.getElementById("total-subscribers").innerHTML;
+                    totalSubscribers--;
+                    document.getElementById("total-subscribers").innerHTML = totalSubscribers;
+                    document.getElementById(btnid).innerHTML = 'Subscribe'
+                    document.getElementById(btnid).className= 'btn btn-danger'
+                    document.getElementById(btnid).onclick = ()=>doSubscribe(user_id,btnid)
+                  } else {
+                    alert(res.message)
+                  }
+                }
+              }
+              var userId = document.getElementById("user").value;
+              ajax.send("userId="+ userId)
+            }
+            
+   </script>
     <script src="/public/sidebar-01/js/jquery.min.js"></script>
     <script src="/public/sidebar-01/js/popper.js"></script>
     <script src="/public/sidebar-01/js/bootstrap.min.js"></script>

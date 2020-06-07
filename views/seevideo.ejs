@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-  	<title>MYyoutube</title>
+  	<title>Pixplay</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -17,12 +17,11 @@
     }
       </style>
     
-    <% if (user) {%>
-      <script>
-        window.onbeforeunload = function() {
-              alert("chal raha hai")
-              var videoPlayer = document.getElementById("videoPlayer");
-              var watched = Math.floor(videoPlayer.currentTime);
+    <script type="text/javascript">
+    window.onbeforeunload = function(event) {
+  event.returnValue = "Write something clever here..";
+              var vid = document.getElementById("videoPlayer");
+              var watched = vid.currentTime
 
               if (watched > 0){
                 var videoId = document.getElementById("videoId").value;
@@ -35,16 +34,33 @@
                 if(this.readyState == 4 && this.status == 200){
                   console.log(this.responseText);
                 }
-              }
+              };
               ajax.send("videoId=" + videoId + "&watched=" + watched);
             }
+};
+        // window.onbeforeunload = function() {
+        //       alert("chal raha hai")
+        //       var videoPlayer = document.getElementById("videoPlayer");
+        //       var watched = Math.floor(videoPlayer.currentTime);
 
-            }
-      </script>
-      <% } %>
+        //       if (watched > 0){
+        //         var videoId = document.getElementById("videoId").value;
 
-    <script type="text/javascript">
-      function commentReply(node){
+        //         var ajax = new XMLHttpRequest();
+        //         ajax.open("POST", "/save-history", true);
+        //         ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        //         ajax.onreadystatechange = function(){
+
+        //         if(this.readyState == 4 && this.status == 200){
+        //           console.log(this.responseText);
+        //         }
+        //       };
+        //       ajax.send("videoId=" + videoId + "&watched=" + watched);
+        //     }
+
+        //     };
+
+            function commentReply(node){
         
                   var commentId = node.getAttribute("data-comment-id");
                   var y = "";
@@ -75,9 +91,10 @@
         ajax.onreadystatechange = function(){
           if(this.readyState == 4 && this.status == 200){
             var res = JSON.parse(this.responseText);
+            var a = "replis-"+ commentId;
             var html = "";
-            html += '<div class="row"><div class="col-1"><img src="' + res.user.image + '" height="20px" width="20px" style="border-radius:50%;" alt="..."></div> <div class="col-11"style="font-size: x-large;"><h5 ><b>' + res.user.name + '</b></h5><br/>' + form.reply.value + '</div>';
-            document.getElementById("replis").innerHTML += html;
+            html += '<div class="row"><div class="col-1"><img src="' + res.rp.user.image + '" height="20px" width="20px" style="border-radius:50%;" alt="..."></div> <div class="col-11"style="font-size: x-large;"><h5 ><b>' + res.rp.user.name + '</b></h5><br/>' + form.reply.value + '</div>';
+            document.getElementById(a).innerHTML += html;
             form.reply.value = "";
             
           }
@@ -92,18 +109,18 @@
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "http://localhost:3000/";
+    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 
 <script type="text/javascript">
       var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      var baseUrl = "http://localhost:3000/";
+      var baseUrl = "https://pix-play.herokuapp.com/";
 </script>
 		
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
 				<div class="p-4 pt-5">
-        <center><img src="<%= baseUrl + user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+        <center><img src="<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
           <ul class="list-unstyled components mb-5">
 	          <li class="active">
 	            <a href="/index">Home</a>
@@ -112,18 +129,18 @@
               <a href="/upload" >Upload</a>
 	          </li>
 	          <li>
-              <a href="/index" >Subscribed Channel</a>
+              <a href="/my_subscription" >Subscribed Channel</a>
 	          </li>
 	          <li>
-              <a href="/index" >Liked Video's</a>
+              <a href="/liked" >Liked Video's</a>
 	          </li>
 	          <li>
-              <a href="/index" >Disliked Video's</a>
+              <a href="/disliked" >Disliked Video's</a>
             </li>
             <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
             <li><a href="/watch-history">History</a></li>
-            <li><a href="/upload" >Notifications</a></li>
-            <li><a href="/index" >Settings</a></li>
+            <li><a href="/all-notification" >Notifications</a></li>
+            <li><a href="/settings" >Settings</a></li>
 	        </ul>
 
 	        
@@ -182,8 +199,11 @@
                               var notification = window.user[a];
                               if(!notification.is_read){
                                 console.log(notification.is_read)
-                                if (notification.typ == "new_comment"){
-                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                                if (notification.typ == "New Comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Comment</a> '
+                                }
+                                if (notification.typ == "New Reply"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Reply</a> '
                                 }
                               }
                             }
@@ -244,7 +264,7 @@
                   </p>
                   <div class="row">
                     <div class="col-2"><img src="<%= video.user.image %>" alt="User" height="50px" width="50px" style="border-radius: 50%;"></div>
-                    <div class="col-10"><b><%= video.user.name %></b><br/><p id="total-subscribers"><%= video.user.subscription.length %> Subscribers</p></div>
+                    <div class="col-10"><b><%= video.user.name %></b><br/><p ><a id="total-subscribers"><%= video.user.subscription.length %></a> Subscribers</p></div>
                   </div>
                   
                 </div>
@@ -260,12 +280,16 @@
                       <span id="dislikes"><%= video.dislikers.length %></span>
                     </button>
                   </p>
-                  &nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-danger" onclick="doSubscribe()">Subscribe</button>
+                  <% if (chksubs == true) { %>
+                    &nbsp;&nbsp;&nbsp;&nbsp;<button type="submit" class="btn btn-secondary" id="subsbutton" onclick="doUnSubscribe('subsbutton')">Unsubscribe</button>
+                    <% } else { %>
+                  &nbsp;&nbsp;&nbsp;&nbsp;<button class="btn btn-danger" id="subsbutton" onclick="doSubscribe('subsbutton')">Subscribe</button>
+                  <% } %>
                 </div>  
             </div>
           <hr>
           <div class="container">
-            <b>Category</b> - <%= video.category %><br/>
+            <b>Category</b> - <a href="/category_search/<%= video.category %>"><%= video.category %></a><br/>
             <b>Description</b> - <%= video.description %>
 
           </div>
@@ -281,12 +305,12 @@
               
                 <div class="row">
                   <div class="col-2">
-                    <img src="<%= comment.user.image %>" height="50px" width="50px" style="border-radius:50%;" alt="...">
+                    <img src="<%= baseUrl + comment.user.image %>" height="50px" width="50px" style="border-radius:50%;" alt="...">
                   </div>
                   <div class="col-10">
-                    <h5><b><%= comment.user.name %></b></h5><br/>
+                    <b><%= comment.user.name %></b><br/>
                     <%= comment.content %>
-                      <div  id="replis">
+                      <div  id="replis-<%= comment._id %>">
                         <div onclick="commentReply(this)" data-comment-id="<%= comment._id %>" style="cursor: pointer; float: right;">
                           Reply
                         </div>
@@ -295,11 +319,11 @@
                           
                         <div class="row">
                           <div class="col-1">
-                            <img src="<%= baseUrl + reply.user.image %>" height="20px" width="20px" style="border-radius:50%;" alt="...">
+                            <img src="<%= baseUrl + reply.usr.image %>" onerror="this.src = 'http://placehold.it/1900x700'" height="20px" width="20px" style="border-radius:50%;" alt="...">
                           </div>
-                          <div class="col-11" style="font-size: small;">
-                            <h5><b><%= reply.user.subscription.length %></b></h5><br/>
-                                    <%= reply.content %>
+                          <div class="col-11" style="font-size: 10px;">
+                            <b><%= reply.usr.name %></b><br/>
+                                    <%= reply.reply.content %>
                           </div>
                         </div>
                         <% }) %>
@@ -334,6 +358,41 @@
 
       <div class="col-4">
         <br/>
+        <h4>Tags</h4>
+        <div class="row">
+          <ul>
+            <% tags = video.tags.split(",") 
+               tags.forEach(function (tag) {
+                 tag = tag.trim()
+               
+            %>
+            <li>
+              <a href="/tag_search/<%= tag %>"><%= tag %></a>
+            </li>
+            <% }) %>
+          </ul>
+        </div>
+        <hr/>
+        <% if (playlist != "") { %>
+        <% if ( playlist.videos.length > 0) { %>
+            <h4>Playlist</h4>
+            <% playlist.videos.forEach(function (item) { %>
+              <% if(item.title == video.title) {%>
+                <div class="row" >
+                  <div class="col-8"><img src="<%= baseUrl + item.thumbnail %>" height="125px" width="200px" style="width:100%; "></div>
+                <div class="col-4"><a href="/playlist/<%= playlistId + "/" + item._id %>"> <%= item.title %><br/></a>Now Playing<br/><%= item.minutes +":"+ item.seconds %><br/><%= item.views %> views</div>
+                <% } else { %>
+            <div class="row" >
+              <div class="col-8"><img src="<%= baseUrl + item.thumbnail %>" height="125px" width="200px" style="width:100%; "></div>
+              <div class="col-4"><a href="/playlist/<%= playlistId + "/" + item._id %>"> <%= item.title %></a></div>
+              <% } %>
+              
+            </div>
+            <% }) %>
+              <hr/>
+        <% }
+       }%>
+        
         <h4>Related Videos</h4>
         <div class="container" id="related-videos">
 
@@ -354,13 +413,12 @@
                 var date = createdAt.getDate() + "";
                 date = date.padStart(2,"0") + " " + months[createdAt.getMonth()] + ", " + createdAt.getFullYear();
                 html += '<div class="row">';
-                  html += '<div class="col-8"><img  src="' + baseUrl + videos[a].thumbnail +'" height="125px" width="200px" style="width:100%; height=100%;"/></div>';
+                  html += '<div class="col-8"><img  src="' + baseUrl + videos[a].thumbnail +'" height="125px" width="200px" style="width:100%; height:100%;"/></div>';
                   html += '<div class="col-4">';
                   html += '<h6><a href="/watch/' + videos[a]._id + '">' + videos[a].title +'</a><br/>'+ videos[a].views+ ' views</h6><br/>'+ '<p>' + videos[a].minutes + ":" + videos[a].seconds + "</p>";
                 html += '</div></div><hr/>';
 
               }
-              console.log("bhenchod")
               document.getElementById("related-videos").innerHTML += html;
 
             }
@@ -375,7 +433,7 @@
 
             
 
-            function doSubscribe(){
+            function doSubscribe(btnid){
               var ajax = new XMLHttpRequest();
               ajax.open("POST", "/do-subscribe", true);
               ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -384,9 +442,36 @@
                 if(this.readyState == 4 && this.status == 200){
                   var res = JSON.parse(this.responseText);
                   if(res.status == "success"){
-                    var totalSubscribers = document.getElementById("toatl-subscribers").innerHTML;
+                    var totalSubscribers = document.getElementById("total-subscribers").innerHTML;
                     totalSubscribers++;
                     document.getElementById("total-subscribers").innerHTML = totalSubscribers;
+                    document.getElementById(btnid).innerHTML = 'Unsubscribe'
+                    document.getElementById(btnid).className= 'btn btn-secondary'
+                    document.getElementById(btnid).onclick = ()=>doUnSubscribe(btnid)
+                  } else {
+                    alert(res.message)
+                  }
+                }
+              }
+              var videoId = document.getElementById("videoId").value;
+              ajax.send("videoId="+ videoId)
+            }
+
+            function doUnSubscribe(btnid){
+              var ajax = new XMLHttpRequest();
+              ajax.open("POST", "/do-unsubscribe", true);
+              ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+              ajax.onreadystatechange = function(){
+                if(this.readyState == 4 && this.status == 200){
+                  var res = JSON.parse(this.responseText);
+                  if(res.status == "success"){
+                    var totalSubscribers = document.getElementById("total-subscribers").innerHTML;
+                    totalSubscribers--;
+                    document.getElementById("total-subscribers").innerHTML = totalSubscribers;
+                    document.getElementById(btnid).innerHTML = 'Subscribe'
+                    document.getElementById(btnid).className= 'btn btn-danger'
+                    document.getElementById(btnid).onclick = ()=>doSubscribe(btnid)
                   } else {
                     alert(res.message)
                   }

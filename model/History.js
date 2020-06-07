@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const history_schema = new mongoose.Schema({
     watched:{
-        type: Date,
+        type: Number,
         requird: true
     },
     post: {

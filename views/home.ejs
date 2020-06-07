@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-  	<title>MYyoutube</title>
+  	<title>Pixplay</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -24,18 +24,18 @@
               <a href="/upload" >Upload</a>
 	          </li>
 	          <li>
-              <a href="/index" >Subscribed Channel</a>
+              <a href="/my_subscription" >Subscribed Channel</a>
 	          </li>
 	          <li>
-              <a href="/index" >Liked Video's</a>
+              <a href="/liked" >Liked Video's</a>
 	          </li>
 	          <li>
-              <a href="/index" >Disliked Video's</a>
+              <a href="/disliked" >Disliked Video's</a>
             </li>
             <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
             <li><a href="/watch-history">History</a></li>
-            <li><a href="/upload" >Notifications</a></li>
-            <li><a href="/index" >Settings</a></li>
+            <li><a href="/all-notification" >Notifications</a></li>
+            <li><a href="/settings" >Settings</a></li>
 	        </ul>
 
 	        
@@ -94,8 +94,11 @@
                               var notification = window.user[a];
                               if(!notification.is_read){
                                 console.log(notification.is_read)
-                                if (notification.typ == "new_comment"){
-                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                                if (notification.typ == "New Comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Comment</a> '
+                                }
+                                if (notification.typ == "New Reply"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Reply</a> '
                                 }
                               }
                             }
@@ -130,13 +133,15 @@
           </div>
         </nav>
 
+        <form method="GET" action="/search">
         <div class="input-group mb-3">
             
-          <input type="text" class="form-control" placeholder="Search Video's here" aria-label="Recipient's username" aria-describedby="basic-addon2">
+          <input type="text" autocomplete="off" name="search_query" class="form-control" placeholder="Search Video's here" aria-label="Recipient's username" aria-describedby="basic-addon2">
           <div class="input-group-append">
-            <button class="btn btn-outline-dark">Search</button>
+            <button type="submit" class="btn btn-outline-dark">Search</button>
           </div>
         </div>
+      </form>
         <hr/>
         <div class="container col-12">
           <% videos.forEach(function (video) { %>
@@ -146,7 +151,7 @@
               </div>
               <div class="col-6" >
                 <h4><b><%= video.title %></b></h4>
-                <h6><b>Category : </b><%= video.category %> </h6>
+                <h6><b>Category : <a href="/category_search/<%= video.category %>"><%= video.category %></a></h6>
                 <p><img src="<%= video.user.image %>" alt="User" height="20px" width="20px" style="border-radius: 50%;"> <a href="/chanel/<%= video.user._id %>"><%= video.user.name %></a><br/>
                 <%= video.views %> views
                 </p>
@@ -157,7 +162,7 @@
                 <a class="btn btn-outline-warning" href="/watch/<%= video._id %>">Watch</a>
                 <br/>
                 <br/>
-                <button class="btn btn-danger">Subscribe</button>
+                
               <!-- </center> -->
               </div>
             </div>

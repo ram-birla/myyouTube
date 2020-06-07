@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+  	<title>Pixplay</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+		
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="/public/sidebar-01/css/style.css">
+  </head>
+  <body>
+    <%
+    months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    baseUrl = "https://pix-play.herokuapp.com/";
+%>
+		<div class="wrapper d-flex align-items-stretch">
+			<nav id="sidebar">
+				<div class="p-4 pt-5">
+        <center><img src="<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+          <ul class="list-unstyled components mb-5">
+	          <li >
+	            <a href="/index">Home</a>
+	          </li>
+            <li >
+              <a href="/upload" >Upload</a>
+	          </li>
+	          <li>
+              <a href="/my_subscription" >Subscribed Channel</a>
+	          </li>
+	          <li>
+              <a href="/liked" >Liked Video's</a>
+	          </li>
+	          <li>
+              <a href="/disliked" >Disliked Video's</a>
+            </li>
+            <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
+            <li><a href="/watch-history">History</a></li>
+            <li><a href="/all-notification" >Notifications</a></li>
+            <li><a href="/settings" >Settings</a></li>
+	        </ul>
+
+	        
+
+	      </div>
+    	</nav>
+
+        <!-- Page Content  -->
+      <div id="content" class="p-4 p-md-5">
+
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container-fluid">
+
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+              <i class="fa fa-bars"></i>
+              <span class="sr-only">Toggle Menu</span>
+            </button>
+            <button class="btn btn-dark d-inline-block d-lg-none ml-auto" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa fa-bars"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="nav navbar-nav ml-auto">
+                <script>
+                  function readNotification(self){
+                    var _id = self.getAttribute("data-id");
+                    var ajax = new XMLHttpRequest();
+                      ajax.open("POST", "/read-notification", true);
+                      ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      
+                      ajax.onreadystatechange = function(){
+                        if(this.readyState == 4 && this.status == 200){
+                          var res = JSON.parse(this.responseText)
+                          if(res.status == "error"){
+                            alert(res.message)
+                          }
+                        }
+                      }
+                      ajax.send("notificationId=" +  _id);
+                      return true;
+                  }
+                      var ajax = new XMLHttpRequest();
+                      ajax.open("GET", "/get_user", true);
+                      ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      
+                      ajax.onreadystatechange = function(){
+                        if(this.readyState == 4 && this.status == 200){
+                          var res = JSON.parse(this.responseText)
+                          if(res.status == "success"){
+                            window.user = res.user
+                            console.log(window.user)
+      
+                            var x = "";
+                            window.user = window.user.reverse()
+                            for(var a = 0; a< window.user.length; a++) {
+                              var notification = window.user[a];
+                              if(!notification.is_read){
+                                console.log(notification.is_read)
+                                if (notification.typ == "New Comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Comment</a> '
+                                }
+                                if (notification.typ == "New Reply"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Reply</a> '
+                                }
+                              }
+                            }
+                            document.getElementById("unread-notifications").innerHTML = x
+                          }else{
+                            alert(res.message)
+                          }
+                        }
+                      }
+                      ajax.send();
+                </script>
+                <li class="nav-item">
+                  <div class="dropdown">
+                    <a class="btn btn-light dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <svg class="bi bi-bell" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2z"/>
+                        <path fill-rule="evenodd" d="M8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                      </svg>
+                    </a>
+                  
+                    <div class="dropdown-menu" id="unread-notifications" aria-labelledby="dropdownMenuLink">
+                      <!-- <a class="dropdown-item" href="#">Action</a> -->
+                    </div>
+                  </div>
+                </li>
+                &nbsp;&nbsp;
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+        
+  <div class="container">
+      <center><h1>Liked Videos</h1></center><br/>
+      <% liked.forEach(function (video) { %>
+        <div class="row">
+            <div class="col-2">
+                <img src="<%= baseUrl + video.post.thumbnail %>" style="width:100%" height="125px" >
+            </div>
+            <div class="col-7">
+                <h6><%= video.post.title %></h6>
+                Category: <a href="/category_search/<%= video.post.category %>"><%= video.category %></a><br/>
+                <%= video.post.minutes + ":" + video.post.seconds %><br/>
+                <%= video.views %> views<br/>
+                
+            </div>
+            <div class="col-3">
+                <a href="/watch/<%= video.post._id %>" class="btn btn-primary">View</a><br/><br/>
+                <form method="POST" action="/remove-from-like" onsubmit="return confirm('Are you sure want to remove from liked videos ?');" style="display: contents;">
+                  <input type="hidden" name="_id" value="<%= video.post._id %>">
+                  <button type="submit" class="btn btn-danger">Delete</button>
+
+                </form>
+                
+            </div>
+        </div>
+        <% }) %>
+  </div>
+
+      
+  <script src="/public/sidebar-01/js/jquery.min.js"></script>
+  <script src="/public/sidebar-01/js/popper.js"></script>
+  <script src="/public/sidebar-01/js/bootstrap.min.js"></script>
+  <script src="/public/sidebar-01/js/main.js"></script>
+
+  </body>
+</html>

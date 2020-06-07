@@ -66,6 +66,11 @@ const video_Schema = new mongoose.Schema({
         ref: "Comment",
         required: false
     }],
+    playlist: {
+        type : mongoose.Schema.Types.ObjectId,
+        ref: "Playlist",
+        required: false
+    },
     user: {
         type : mongoose.Schema.Types.ObjectId,
         ref: "User",

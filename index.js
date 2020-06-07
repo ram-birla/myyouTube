@@ -3,7 +3,6 @@ var app = express();
 var http = require('http').createServer(app);
 const mongoose = require('mongoose');
 var bodyParser = require("body-parser");
-// var bcrypt = require("bcrypt");
 const session = require('express-session');
 var formidable = require("formidable");
 var fileSystem = require("fs");
@@ -17,10 +16,10 @@ const Notification = require("./model/Notification");
 const Replies = require("./model/Replies");
 const Subscriber = require("./model/Subscriber");
 const History = require("./model/History");
+const Playlist = require("./model/Playlist");
 
 TWO_HOURS = 1000*60*60*2
 const{
-    PORT = 3000,
     NODE_ENV = 'development',
     SESS_NAME = 'ram',
     SESS_SECRET = 'ijo20fjfk',
@@ -70,7 +69,7 @@ app.use(bodyParser.urlencoded({
 app.use("/public", express.static(__dirname + "/public"));
 app.set("view engine", "ejs");
 
-http.listen(3000, function(){
+http.listen(process.env.PORT || 3000 , function(){
     console.log("Server started at 3000");
 
     app.get("/", function(req,res){
@@ -111,7 +110,7 @@ http.listen(3000, function(){
                 else{
                     console.log('user already exists')
                     msg ="User Already registered"
-                    res.redirect('/registered',{"msg":msg})
+                    res.render('signup',{"msg":msg})
                 }
             }
             catch(e){
@@ -261,7 +260,6 @@ http.listen(3000, function(){
                                 "seconds": seconds,
                                 "watch": currentTime,
                                 "views": 0,
-                                "playlist": "",
                                 "likers": [],
                                 "dislikers": [],
                                 "comments": []
@@ -308,11 +306,19 @@ http.listen(3000, function(){
 //        model: 'Component'
 //      } 
 //   })
-        const cmnt = await Comment.find({"post":req.params.videoId}).populate('user').populate('replies.user')
-        const reply = await Replies.find({"post":req.params.videoId}).populate('user')
-        const user = await User.findById({"_id": req.session.user.id})
-        console.log(video)
-        console.log(cmnt)
+        const cmnt = await Comment.find({"post":req.params.videoId}).populate('user').populate('replies.reply').populate('replies.usr').exec()
+        const u = await User.findById({"_id": req.session.user.id})
+        const checksubscription = await Subscriber.findOne({
+            "channel": video.user._id,
+            "subscriber": req.session.user.id
+        })
+        console.log(checksubscription)
+        if (checksubscription == null){
+            var chksubs = false
+        } else{
+            var chksubs = true
+        }
+        console.log(chksubs)
         if(req.session.user){
             if(video == null){
                 console.log("no seeeeeeeeeeeeeeee")
@@ -327,10 +333,13 @@ http.listen(3000, function(){
                     }
                 )
 
-                res.json({
+                res.render('seevideo',{
                     "video":video,
                     "comments": cmnt,
-                    "user": user
+                    "user": u,
+                    "playlist": [],
+                    "playlistId": "",
+                    "chksubs":chksubs
                 })
             }
         }else{
@@ -440,8 +449,8 @@ http.listen(3000, function(){
                 var channelId = vid.user._id
                 //create a notification
                 const notify = new Notification({
-                    "typ": "new_comment",
-                    "content": cmnt._id,
+                    "typ": "New Comment",
+                    "comment": cmnt._id,
                     "user": channelId,
                     "post": vid._id,
                     "video_watch": vid.watch,
@@ -520,17 +529,26 @@ http.listen(3000, function(){
                 "post": vid,
                 "user": usr
             })
-            await rply.save();
-            cmnt.replies.push(rply)
-            await cmnt.save()
-
-            const u = await User.find({
-                "videos": vid._id
+            re = await rply.save();
+            await Comment.updateOne({"_id":commentId},
+                {$push:
+                    {
+                        'replies':{
+                            'reply':re._id,
+                            'usr':usr._id
+                        }
+                    }
+                }).exec()
+            
+            var channelId = vid.user._id
+            const u = await User.findById({
+                "_id": channelId
             })
 
             const notify = new Notification({
-                "typ": "new_reply",
-                "content": cmnt._id,
+                "typ": "New Reply",
+                "comment": cmnt._id,
+                "reply": re._id,
                 "user": u._id,
                 "post": vid._id,
                 "video_watch": vid.watch,
@@ -540,11 +558,14 @@ http.listen(3000, function(){
 
             u.notifications.push(notify)
             u.save()
+            const rp = await Replies.find({"_id": re._id}).populate('user').exec()
+            console.log(rp)
             res.json({
                 "status": "success",
                 "message": "Reply has been posted",
-                "user": u
-            })
+                "user": u,
+                "rp": rp[0]
+                })
         } else{
             res.json({
                 "status": "error",
@@ -644,7 +665,7 @@ http.listen(3000, function(){
                 })
             } else{
                 console.log("History updating")
-                const hsty = await History.findOne({"post" : req.body.videoId},{
+                const hsty = await History.findOneAndUpdate({"post" : req.body.videoId},{
                     $set:{
                         "watched": req.body.watched
                     }
@@ -678,7 +699,7 @@ http.listen(3000, function(){
     })
 
     app.get("/channel/:channelId", async function(req,res){
-        const user = await User.findById({"_id":req.params.channelId}).populate('videos')
+        const user = await User.findById({"_id":req.session.user.id}).populate('videos').populate('playlists').exec()
         if(user == null){
             res.send("Channel Not found")
         } else{
@@ -738,12 +759,13 @@ http.listen(3000, function(){
                 "_id": req.params.videoId,
                 "user": req.session.user.id
             })
+            const usr = await User.find({"_id":req.session.user.id}).populate('playlists').exec()
             if(vid == null){
-                res.send("Sorry You Did not won This Channel!!")
+                res.send("Sorry You Did not own This Channel!!")
             } else{
-                res.render("editvideo",{
+                res.render('editvideo',{
                     "video": vid,
-                    "user": req.session.user
+                    "user": usr[0]
                 })
             }
         } else{
@@ -768,6 +790,8 @@ http.listen(3000, function(){
 
                         })
                     }
+                    if( fields.playlst == ""){
+                        console.log("null")
                     const video = await Video.findOneAndUpdate({
                         "_id": fields.videoId
                     },{
@@ -775,10 +799,38 @@ http.listen(3000, function(){
                             "title": fields.title,
                             "description": fields.description,
                             "tags": fields.tags,
-                            "category": fields.category
+                            "category": fields.category,
+                            "thumbnail": vid.thumbnail,
+
                         }
                     })
+                    } else{
+                        console.log("not null")
+                        console.log(fields.playlst)
+                        const play = await Playlist.findByIdAndUpdate({
+                            "_id":fields.playlst
+                        },{
+                            $push: {
+                                "videos": fields.videoId
+                            }
+                        })
+                        const video = await Video.findByIdAndUpdate({
+                            "_id": fields.videoId
+                        },{
+                            $set: {
+                                "title": fields.title,
+                                "description": fields.description,
+                                "tags": fields.tags,
+                                "category": fields.category,
+                                "thumbnail": vid.thumbnail,
+                                "playlist": play._id
+                            }
+                        })
+                        
+
+                    }
                     res.redirect("/edit/" + vid._id)
+                
                 }
             })
         } else{
@@ -787,12 +839,26 @@ http.listen(3000, function(){
     })
 
     app.get("/chanel/:channelId", async function(req,res){
-        const user = await User.findById({"_id":req.params.channelId}).populate('videos')
+        const user = await User.findById({"_id":req.params.channelId}).populate('videos').populate('playlists').exec()
+        const u = await User.findById({"_id":req.session.user.id})
+        const checksubscription = await Subscriber.findOne({
+            "channel": req.params.channelId,
+            "subscriber": req.session.user.id
+        })
+        console.log(checksubscription)
+        if (checksubscription == null){
+            var chksubs = false
+        } else{
+            var chksubs = true
+        }
+
         if(user == null){
             res.send("Channel Not found")
         } else{
             res.render("userchannel",{
-                "user":user
+                "user":user,
+                "chksubs":chksubs,
+                "u":u
             })
         }
     })
@@ -838,6 +904,29 @@ http.listen(3000, function(){
                     "post": req.body._id,
                     "user": req.session.user.id
                 })
+                const u = await User.findOne({"_id":req.session.user.id}).populate('playlist').exec();
+                var playlistId = "";
+                for (var a=0; a < u.playlist.length; a++){
+                    for(var b=0; b < u.playlists[a].videos.length;b++){
+                        var video = u.playlists[a].videos[b];
+                        if(video._id == req.body._id){
+                            playlistId = u.playlists[a]._id;
+                            break;
+                        }
+                    }
+                }
+                if(playlistId != ""){
+                    await Playlist.findOneAndUpdate({
+                        "_id": playlistId,
+                        "user": req.session.user.id
+                    },{
+                        $pull:{
+                            "videos":{
+                                _id: req.body._id
+                            }
+                        }
+                    })
+                }
 
                 
                 res.redirect("/index")
@@ -846,4 +935,456 @@ http.listen(3000, function(){
             res.redirect("/login")
         }
     })
+
+    app.post("/create-playlist", async function(req,res){
+        if(req.session.user){
+            const play = await Playlist.findOne({"title": req.body.title})
+            if (play == null){
+                const playlist = new Playlist({
+                    "title": req.body.title,
+                    "videos":[],
+                    "user": req.session.user.id
+                })
+                const p = await playlist.save();
+                await User.findOneAndUpdate({
+                    "_id":req.session.user.id
+                },{
+                    $push:{
+                        playlists: p._id
+                    }
+                })
+                res.redirect("/channel/"+ req.session.user.id)
+            } else{
+                res.json({
+                    "status": "error",
+                    "message": "Playlist Exist"
+                })
+            }
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.get("/playlist/:playlistId/:videoId", async function(req,res){
+        const cmnt = await Comment.find({"post":req.params.videoId}).populate('user').populate('replies.reply').populate('replies.usr').exec()
+        const user = await User.findById({"_id": req.session.user.id})
+        const vid = await Video.findOne({
+            "_id":req.params.videoId,
+            "playlist": req.params.playlistId
+        }).populate('user')
+        if(vid == null){
+            res.send("video Does not exist")
+        } else {
+            await Video.updateOne({
+                "_id": vid._id
+            },{
+                $inc : {
+                    "views": 1
+                }
+            })
+            const u = await User.findById({"_id": vid.user._id}).populate('playlists').exec()
+            const play = await Playlist.findOne({"user": vid.user._id}).populate("videos").exec()
+            var playlistVideos = [];
+            for (a=0;a < u.playlists.length; a++){
+                if(play._id == req.params.playlistId){
+                    playlistVideos = play.videos;
+                    break;
+                }
+            }
+                       
+            res.render('seevideo',{
+                "video": vid,
+                "playlist": play,
+                "playlistId": req.params.playlistId,
+                "comments": cmnt,
+                "user": user,
+            })
+        }
+    })
+
+    app.post("/delete-playlist", async function(req,res){
+        if(req.session.user){
+            const usr = await User.findOne({
+                $and: [{
+                    "_id": req.session.user.id
+                }, {
+                    "playlists": req.body._id
+                }]
+            })
+            if(usr == null){
+                res.send("Sorry ,you do not own this Playlist");
+                return;
+            } 
+            await User.updateOne({
+                "_id": req.session.user.id
+            },{
+                $pull:{
+                    "playlists":{
+                        "_id": req.body._id
+                    }
+                }
+            })
+            await Video.updateMany({
+                "playlist": req.body._id
+            },{
+                $set: {
+                    "playlist": ""
+                }
+            })
+            res.redirect("/channel/"+ req.session.user.id)
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.get("/my_subscription", async function(req,res){
+        if(req.session.user){
+            const usr = await User.findById({"_id":req.session.user.id})
+            const subscribe = await Subscriber.find({"subscriber": req.session.user.id}).populate('channel').exec()
+            console.log(subscribe)
+            res.render('subscribed',{
+                "user":usr,
+                "subscribe": subscribe
+            })
+        }else{
+            res.redirect("/login")
+        }
+    })
+
+    app.post("/remove-channel-from-subscription", async function(req,res){
+        if(req.session.user){
+            const s = await Subscriber.findOne({"channel": req.body._id}).exec()
+            await User.updateOne({
+                "_id": req.body._id
+            },{
+                $pull:{
+                    "subscription":s._id
+                }
+            })
+            await Subscriber.remove({"_id": s._id})
+            res.redirect("/my_subscription")
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.get("/category_search/:query", async function(req,res){
+        const u = await User.findById({"_id":req.session.user.id})
+        const videos = await Video.find({
+            "category": {
+                $regex : ".*?" + req.params.query + ".*?"
+            }
+        })
+        res.render("search",{
+                "videos":videos,
+                "query": req.params.query,
+                "user": u
+            })
+    })
+
+    app.get("/tag_search/:query", async function(req,res){
+        const u = await User.findById({"_id":req.session.user.id})
+        const videos = await Video.find({
+            "tags": {
+                $regex : ".*?" + req.params.query + ".*?",
+                $options : "i"
+            }
+        })
+        res.render("search",{
+                "videos":videos,
+                "query": req.params.query,
+                "user": u
+            })
+    })
+
+    app.get("/search", async function(req,res){
+        const u = await User.findById({"_id":req.session.user.id})
+        const videos = await Video.find({
+            "title": {
+                $regex : req.query.search_query ,
+                $options : "i"
+            }
+        }).populate('user')
+        res.render("search",{
+                "videos":videos,
+                "query": req.query.search_query,
+                "user": u
+            })
+    })
+
+    app.get("/settings", async function(req,res){
+        if(req.session.user){
+            const u = await User.findById({"_id": req.session.user.id})
+            res.render("settings",{
+                "user": u,
+                "request": req.query
+            })
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.post("/save-settings", async function(req,res){
+        if(req.session.user){
+            if(req.body.password == ""){
+                await User.updateOne({
+                    "_id": req.session.user.id
+                },{
+                    $set: {
+                        "name": req.body.name
+                    }
+                })
+            } else{
+                await User.updateOne({
+                    "_id": req.session.user.id
+                },{
+                    $set: {
+                        "name": req.body.name,
+                        "password": req.body.password
+                    }
+                })
+            }
+            res.redirect("/settings?message=success")
+        }else{
+            res.redirect("/login")
+        }
+    })
+
+    app.get("/liked", async function(req,res){
+        if(req.session.user){
+            const u = await User.findById({"_id": req.session.user.id})
+            const liked = await Like.find({
+                "user": req.session.user.id
+            }).populate('post').exec()
+            res.render("liked",{
+                "user": u,
+                "liked":liked
+            })
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.get("/disliked", async function(req,res){
+        if(req.session.user){
+            const u = await User.findById({"_id": req.session.user.id})
+            const disliked = await Dislike.find({
+                "user": req.session.user.id
+            }).populate('post').exec()
+            res.render("disliked",{
+                "user": u,
+                "disliked": disliked
+            })
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.post("/remove-from-like", async function(req,res){
+        if(req.session.user){
+            const vid = await Like.findOne({
+                "post": req.body._id,
+                "user": req.session.user.id
+            })
+            await Video.updateOne({
+                "likers": vid._id
+            },{
+                $pull:{
+                    "likers": vid._id
+                }
+            })
+            await Like.findByIdAndDelete({
+                "_id":vid._id
+            })
+            res.redirect("/liked")
+        } else {
+            res.redirect("/login")
+        }
+    })
+
+    app.post("/remove-from-dislike", async function(req,res){
+        if(req.session.user){
+            const vid = await Dislike.findOne({
+                "post": req.body._id,
+                "user": req.session.user.id
+            })
+            await Video.updateOne({
+                "dislikers": vid._id
+            },{
+                $pull:{
+                    "dislikers": vid._id
+                }
+            })
+            await Dislike.findByIdAndDelete({
+                "_id":vid._id
+            })
+            res.redirect("/disliked")
+        } else {
+            res.redirect("/login")
+        }
+    })
+
+    app.get("/all-notification", async function(req,res){
+        if(req.session.user){
+            const u = await User.findById({"_id": req.session.user.id})
+            const notify = await Notification.find({
+                "user":req.session.user.id
+            }).populate('post').populate('comment').populate('reply').exec()
+            res.render('notification',{
+                "notify": notify,
+                "user": u
+            })
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.post("/do-unsubscribe", async function(req,res){
+        if(req.session.user){
+            await Video.findOne({
+                "_id":req.body.videoId}, async function(error, video){
+                    if(req.session.user.id == video.user._id){
+                        res.json({
+                            "status":"error",
+                            "message":"You cannot subscribe Your Own Channel"
+                        })
+                    } else{
+                        const subscribed = await Subscriber.findOne({
+                            "channel": video.user._id,
+                            "subscriber": req.session.user.id
+                        })
+                        if (subscribed == null){
+                            res.json({
+                                "status" : "error",
+                                "message": "Already UnSubScribed"
+                            })
+                        } else{
+                            await Subscriber.remove({
+                                "channel": video.user._id,
+                                "subscriber": req.session.user.id
+                            }) 
+                    
+                            await User.findOneAndUpdate({
+                                "_id":video.user._id
+                            },{
+                                $pull:{
+                                    subscription: subscribed._id
+                                }
+                            })
+                            res.json({
+                                "status":"success",
+                                "message":"Unsubscribed"
+                            })
+                        }
+                    }
+                })
+                    
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.post("/do-subscribe-user", async function(req,res){
+        if(req.session.user){
+            if(req.session.user.id == req.body.userId){
+                        res.json({
+                            "status":"error",
+                            "message":"You cannot subscribe Your Own Channel"
+                        })
+                    } else{
+                        //Check if channel is alredy Subscribed
+                        const subscribed = await Subscriber.findOne({
+                            "channel": req.body.userId,
+                            "subscriber": req.session.user.id
+                        })
+                        if (subscribed == null){
+                            const subscribe = new Subscriber({
+                                "channel": req.body.userId,
+                                "subscriber": req.session.user.id
+                            })
+                            await subscribe.save()
+                            const usr = await User.findByIdAndUpdate({
+                                "_id": req.body.userId
+                            })
+                            usr.subscription.push(subscribe)
+                            await usr.save()
+                            res.json({
+                                "status" : "success",
+                                "message": "SubScribed"
+                            })
+
+                        } else{
+                            res.json({
+                                "status": "error",
+                                "message": "Already Subscribed"
+                            })
+                        }
+                   
+                    }
+        } else{
+            res.json({
+                "status" : "error",
+                "message": "Please Login"
+            })
+        }
+    })
+
+
+    app.post("/do-unsubscribe-user", async function(req,res){
+        if(req.session.user){
+            
+                        const subscribed = await Subscriber.findOne({
+                            "channel": req.body.userId,
+                            "subscriber": req.session.user.id
+                        })
+                        if (subscribed == null){
+                            res.json({
+                                "status" : "error",
+                                "message": "Already UnSubScribed"
+                            })
+                        } else{
+                            await Subscriber.remove({
+                                "channel": req.body.userId,
+                                "subscriber": req.session.user.id
+                            }) 
+                    
+                            await User.findOneAndUpdate({
+                                "_id":req.body.userId
+                            },{
+                                $pull:{
+                                    subscription: subscribed._id
+                                }
+                            })
+                            res.json({
+                                "status":"success",
+                                "message":"Unsubscribed"
+                            })
+                        }
+                 
+                    
+        } else{
+            res.redirect("/login")
+        }
+    })
+
+    app.post("/delete-from-history", async function(req,res){
+        if(req.session.user){
+            await History.findByIdAndDelete({"_id": req.body.hstId})
+            await User.findByIdAndUpdate(
+                {
+                    "_id":req.session.user.id
+                },{
+                    $pull:{
+                        "history": req.body.hstId
+                    }
+            })
+            res.redirect("/watch-history")
+
+
+
+        } else{
+            res.redirect("/login")
+        }
+    })
+
 })

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-  	<title>MYyoutube</title>
+  	<title>Pixplay</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -24,18 +24,18 @@
               <a href="/upload" >Upload</a>
 	          </li>
 	          <li>
-              <a href="/index" >Subscribed Channel</a>
+              <a href="/my_subscription" >Subscribed Channel</a>
 	          </li>
 	          <li>
-              <a href="/index" >Liked Video's</a>
+              <a href="/liked" >Liked Video's</a>
 	          </li>
 	          <li>
-              <a href="/index" >Disliked Video's</a>
+              <a href="/disliked" >Disliked Video's</a>
             </li>
             <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
             <li><a href="/watch-history">History</a></li>
-            <li><a href="/upload" >Notifications</a></li>
-            <li><a href="/index" >Settings</a></li>
+            <li><a href="/all-notification" >Notifications</a></li>
+            <li><a href="/settings" >Settings</a></li>
 	        </ul>
 
 	        
@@ -94,8 +94,11 @@
                               var notification = window.user[a];
                               if(!notification.is_read){
                                 console.log(notification.is_read)
-                                if (notification.typ == "new_comment"){
-                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                                if (notification.typ == "New Comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Comment</a> '
+                                }
+                                if (notification.typ == "New Reply"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Reply</a> '
                                 }
                               }
                             }

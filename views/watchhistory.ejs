@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-  	<title>MYyoutube</title>
+  	<title>Pixplay</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -14,7 +14,7 @@
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "http://localhost:3000/";
+    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 		
 		<div class="wrapper d-flex align-items-stretch">
@@ -29,18 +29,18 @@
               <a href="/upload" >Upload</a>
 	          </li>
 	          <li>
-              <a href="/index" >Subscribed Channel</a>
+              <a href="/my_subscription" >Subscribed Channel</a>
 	          </li>
 	          <li>
-              <a href="/index" >Liked Video's</a>
+              <a href="/liked" >Liked Video's</a>
 	          </li>
 	          <li>
-              <a href="/index" >Disliked Video's</a>
+              <a href="/disliked" >Disliked Video's</a>
             </li>
             <li><a href="/index" >My Channel</a></li>
             <li class="active"><a href="/watch-history">History</a></li>
-            <li><a href="/upload" >Notifications</a></li>
-            <li><a href="/index" >Settings</a></li>
+            <li><a href="/all-notification" >Notifications</a></li>
+            <li><a href="/settings" >Settings</a></li>
 	        </ul>
 
 	        
@@ -99,8 +99,11 @@
                               var notification = window.user[a];
                               if(!notification.is_read){
                                 console.log(notification.is_read)
-                                if (notification.typ == "new_comment"){
-                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                                if (notification.typ == "New Comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Comment</a> '
+                                }
+                                if (notification.typ == "New Reply"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Reply</a> '
                                 }
                               }
                             }
@@ -140,7 +143,7 @@
         <% history.forEach(function (hst) { %>
     <div class="row">
         <div class="col-2">
-            <img src="<%= baseUrl + hst.post.thumbnail %>" alt="Loading..." height="125px" width="200px" style="width:100%;">
+            <img src="<%= hst.post.thumbnail %>" alt="Loading..." height="125px" width="200px" style="width:100%;">
         </div>
         <div class="col-6">
             <h6><b><%= hst.post.title %></b></h6><br/>
@@ -148,21 +151,48 @@
             <% 
                 var videoDuration = (hst.post.minutes * 60 )+ hst.post.seconds
             %>
+            <%
+            var minutes = Math.floor(hst.watched / 60);
+            var seconds = hst.watched - (minutes * 60);
+        %>
+            <% if ((hst.watched/videoDuration)*100 <= 25)  { %>
             <div class="progress">
-            <div class="progress-bar" role="progressbar" style="width: <%= Math.floor((hst.watched / videoDuration) * 100) %>;" aria-valuenow="<%= hst.watched %>" aria-valuemin="0" aria-valuemax="<%= videoDuration %>" >
-                <%
-                    var minutes = Math.floor(hst.watched / 60);
-                    var seconds = hst.watched - (minutes * 60);
-                %>
+              <div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+               
 
                 <%= minutes + ":" + seconds %>
             </div>
-        </div>
+          </div>
+          <% } else if((hst.watched/videoDuration)*100 > 25 && (hst.watched/videoDuration)*100 <= 50){ %>
+            <div class="progress">
+              <div class="progress-bar" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                 
+  
+                  <%= minutes + ":" + seconds %>
+              </div>
+            </div>
+            <% } else if((hst.watched/videoDuration)*100 > 50 && (hst.watched/videoDuration)*100 <= 75){ %>
+              <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+                    
+    
+                    <%= minutes + ":" + seconds %>
+                </div>
+              </div>
+              <% } else if((hst.watched/videoDuration)*100 > 75 && (hst.watched/videoDuration)*100 <= 100){ %>
+                <div class="progress">
+                  <div class="progress-bar" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                      
+                      <%= minutes + ":" + seconds %>
+                  </div>
+                </div>
+                <% } %>
         </div>
         <div class="col-3">
           
             <form method="POST" action="/delete-from-history">
                 <input type="hidden" name="videoId" value="<%= hst.post._id %>" >
+                <input type="hidden" name="hstId" value="<%= hst._id %>" >
                 <a href="/watch/<%= hst.post._id %>" class="btn btn-warning">View</a>
                 <input type="submit" class="btn btn-danger" value="Delete">
             </form>

@@ -32,7 +32,11 @@ const user_Schema = new mongoose.Schema({
         ref: "Subscriber",
         required: false
     }],
-    // playlists: [],
+    playlists: [{
+        type : mongoose.Schema.Types.ObjectId,
+        ref: "Playlist",
+        required: false 
+    }],
     videos: [{
         type : mongoose.Schema.Types.ObjectId,
         ref: "Video",

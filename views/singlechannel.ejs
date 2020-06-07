@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-  	<title>MYyoutube</title>
+  	<title>Pixplay</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -26,32 +26,32 @@
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "http://localhost:3000/";
+    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
 				<div class="p-4 pt-5">
-        <center><img src="<%= baseUrl + user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+        <center><img src="<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
           <ul class="list-unstyled components mb-5">
-	          <li class="active">
+	          <li >
 	            <a href="/index">Home</a>
 	          </li>
 	          <li>
               <a href="/upload" >Upload</a>
 	          </li>
 	          <li>
-              <a href="/index" >Subscribed Channel</a>
+              <a href="/my_subscription" >Subscribed Channel</a>
 	          </li>
 	          <li>
-              <a href="/index" >Liked Video's</a>
+              <a href="/liked" >Liked Video's</a>
 	          </li>
 	          <li>
-              <a href="/index" >Disliked Video's</a>
+              <a href="/disliked" >Disliked Video's</a>
             </li>
-            <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
+            <li class="active"><a href="/channel/<%= user._id %>" >My Channel</a></li>
             <li><a href="/watch-history">History</a></li>
-            <li><a href="/upload" >Notifications</a></li>
-            <li><a href="/index" >Settings</a></li>
+            <li><a href="/all-notification" >Notifications</a></li>
+            <li><a href="/settings" >Settings</a></li>
 	        </ul>
 
 	        
@@ -110,8 +110,11 @@
                               var notification = window.user[a];
                               if(!notification.is_read){
                                 console.log(notification.is_read)
-                                if (notification.typ == "new_comment"){
-                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">NEW Comment</a> '
+                                if (notification.typ == "New Comment"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Comment</a> '
+                                }
+                                if (notification.typ == "New Reply"){
+                                  x += ' <a class="dropdown-item" onclick="return readNotification(this);" data-id=' + notification._id + ' href="/watch/'+ notification.post +'">New Reply</a> '
                                 }
                               }
                             }
@@ -173,11 +176,48 @@
                 <div class="col-md-8">
                   <h3><b><%= user.name %></b></h3>
                   <p><%= user.subscription.length %> Subscribers</p>
+                  
                 </div>
+              </div>
+<hr/>
+              <form method="POST" action="/create-playlist">
+                  <div class="form-group">
+                    <label>Playlist Title</label>
+                    <input type="text" name="title" class="form-control" required>
+                  </div>
+                  <input type="submit" class="btn btn-primary" value="Add Playlist">
+              </form>
+              <hr/>
+              <h3>My Playlists</h3>
+              <div class="row">
+                <%
+                  user.playlists = user.playlists.reverse();
+                  user.playlists.forEach(function (playlist) {
+                %>
+                <div class="col-md-4">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <h3><%= playlist.title %></h3>
+                    </div>
+                    <div class="card-footer">
+                      <% if (playlist.videos.length > 0) {%>
+                        <a href="/playlist/<%= playlist._id %>/<%= playlist.videos[0]._id %>" class="btn btn-warning">View</a>  
+
+                      <% } else { %>
+                        <span>Playlist is empty</span>  
+                      <% } %>
+                      <form method="POST" action="/delete-playlist" onsubmit="return confirm('Are you sure want to delete this playlist ?');" style="display: contents;">
+                        <input type="hidden" name="_id" value="<%= playlist._id %>">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <% }) %>
               </div>
               <hr/>
               <h2>My Videos</h2>
-              <hr/>
                 <% user.videos = user.videos.reverse();
                 user.videos.forEach(function (video) { %>
                   <div class="row">
@@ -201,6 +241,7 @@
                       </form>
                     </div>
                   </div>
+                  <hr/>
                      
                 <% }) %>
               

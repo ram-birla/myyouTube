@@ -6,10 +6,18 @@ const comment_schema = new mongoose.Schema({
         required: true
     },   
     replies:[{
+        reply:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Replies",
         required: false
-    }],
+        
+    },
+    usr : {
+            type : mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        }
+}],
     post: {
         type : mongoose.Schema.Types.ObjectId,
         ref: "Video",

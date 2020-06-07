@@ -9,10 +9,15 @@ const notification_schema = new mongoose.Schema({
         type: Date,
         requird: true
     },
-    content: {
+    comment: {
         type : mongoose.Schema.Types.ObjectId,
         ref: "Comment",
-        required: true
+        required: false
+    },
+    reply : {
+        type : mongoose.Schema.Types.ObjectId,
+        ref: "Replies",
+        required: false
     },
     post: {
         type : mongoose.Schema.Types.ObjectId,
