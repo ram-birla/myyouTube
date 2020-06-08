@@ -14,20 +14,19 @@
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
 				<div class="p-4 pt-5">
-        <center><img src="<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+        <center><img src="/<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
           <ul class="list-unstyled components mb-5">
 	          <li >
 	            <a href="/index">Home</a>
 	          </li>
-            <li class="active">
+            <li>
               <a href="/upload" >Upload</a>
 	          </li>
-	          <li>
+	          <li class="active">
               <a href="/my_subscription" >Subscribed Channel</a>
 	          </li>
 	          <li>
@@ -143,7 +142,7 @@
    subscribe.forEach(function (channel) { %>
     <div class="row">
         <div class="col-2">
-            <img src="<%= baseUrl + channel.channel.image %>" style="border-radius: 50%; width:100%; " onerror="this.src = 'http://placehold.it/150x150'" height="150px" width="150px">
+            <img src="/<%= channel.channel.image %>" style="border-radius: 50%; width:100%; " onerror="this.src = 'http://placehold.it/150x150'" height="150px" width="150px">
         </div>
         <div class="col-7">
             <h3><%= channel.channel.name %></h3><br/>

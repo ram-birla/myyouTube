@@ -14,13 +14,12 @@
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 		
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
 				<div class="p-4 pt-5">
-        <center><img src="<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+        <center><img src="/<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
           <ul class="list-unstyled components mb-5">
 	          <li >
 	            <a href="/index">Home</a>
@@ -37,7 +36,7 @@
 	          <li>
               <a href="/disliked" >Disliked Video's</a>
             </li>
-            <li><a href="/index" >My Channel</a></li>
+            <li><a href="/channel/<%= user._id %>" >My Channel</a></li>
             <li class="active"><a href="/watch-history">History</a></li>
             <li><a href="/all-notification" >Notifications</a></li>
             <li><a href="/settings" >Settings</a></li>
@@ -143,7 +142,7 @@
         <% history.forEach(function (hst) { %>
     <div class="row">
         <div class="col-2">
-            <img src="<%= hst.post.thumbnail %>" alt="Loading..." height="125px" width="200px" style="width:100%;">
+            <img src="/<%= hst.post.thumbnail %>" alt="Loading..." height="125px" width="200px" style="width:100%;">
         </div>
         <div class="col-6">
             <h6><b><%= hst.post.title %></b></h6><br/>

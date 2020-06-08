@@ -26,7 +26,6 @@
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
@@ -152,7 +151,7 @@
     <div class="container">
         <form method="POST" action="/edit" enctype="multipart/form-data">
             <input type="hidden" name="videoId" value="<%= video._id %>">
-            <img  src="<%= baseUrl + video.thumbnail %>" height="200px">
+            <img  src="/<%= video.thumbnail %>" height="200px">
             <div class="form-group">
                 <label>Select Thumbnail</label>
                 <input type="file" accept="image/*" class="form-control" name="thumbnail">

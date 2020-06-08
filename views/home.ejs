@@ -147,12 +147,12 @@
           <% videos.forEach(function (video) { %>
             <div class="row">
               <div class="col-2" >
-                <img src="<%= video.thumbnail %>" alt="Loading..." height="125px" width="200px" style="width:100%;">
+                <img src="/<%= video.thumbnail %>" alt="Loading..." height="125px" width="200px" style="width:100%;">
               </div>
               <div class="col-6" >
                 <h4><b><%= video.title %></b></h4>
                 <h6><b>Category : <a href="/category_search/<%= video.category %>"><%= video.category %></a></h6>
-                <p><img src="<%= video.user.image %>" alt="User" height="20px" width="20px" style="border-radius: 50%;"> <a href="/chanel/<%= video.user._id %>"><%= video.user.name %></a><br/>
+                <p><img src="/<%= video.user.image %>" alt="User" height="20px" width="20px" style="border-radius: 50%;"> <a href="/chanel/<%= video.user._id %>"><%= video.user.name %></a><br/>
                 <%= video.views %> views
                 </p>
                 

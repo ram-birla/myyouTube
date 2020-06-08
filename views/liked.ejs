@@ -14,7 +14,6 @@
     <%
     months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-    baseUrl = "https://pix-play.herokuapp.com/";
 %>
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
@@ -142,13 +141,13 @@
       <% liked.forEach(function (video) { %>
         <div class="row">
             <div class="col-2">
-                <img src="<%= baseUrl + video.post.thumbnail %>" style="width:100%" height="125px" >
+                <img src="/<%= video.post.thumbnail %>" style="width:100%" height="125px" >
             </div>
             <div class="col-7">
                 <h6><%= video.post.title %></h6>
                 Category: <a href="/category_search/<%= video.post.category %>"><%= video.category %></a><br/>
                 <%= video.post.minutes + ":" + video.post.seconds %><br/>
-                <%= video.views %> views<br/>
+                <%= video.post.views %> views<br/>
                 
             </div>
             <div class="col-3">
