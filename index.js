@@ -7,6 +7,7 @@ const session = require('express-session');
 var formidable = require("formidable");
 var fileSystem = require("fs");
 var { getVideoDurationInSeconds } = require("get-video-duration");
+const ipfsAPI = require('ipfs-api');
 const User = require("./model/User");
 const Video = require("./model/Video");
 const Comment = require("./model/Comment");
@@ -68,6 +69,11 @@ app.use(bodyParser.urlencoded({
 }))
 app.use("/public", express.static(__dirname + "/public"));
 app.set("view engine", "ejs");
+
+//Connceting to the ipfs network via infura gateway
+const ipfs = ipfsAPI('ipfs.infura.io', '5001', {protocol: 'https'})
+
+//Reading file from computer
 
 http.listen(process.env.PORT || 3000 , function(){
     console.log("Server started at 3000");
@@ -217,77 +223,94 @@ http.listen(process.env.PORT || 3000 , function(){
         
     app.post("/upload-video", async function(req,res){
         if(req.session.user){
-            
+            let filePath = ''
+            let thumbnail = ''
             var formData = new formidable.IncomingForm();
-            formData.maxFileSize = 1000 * 1024 * 1024;
-            formData.parse(req, function(err, fields, files) {
+            formData.parse(req, async function(err, fields, files) {
                 var title = fields.title;
                 var description = fields.description;
                 var tags = fields.tags;
                 var category = fields.category;
 
-                var oldPathThumbnail = files.thumbnail.path;
-                var thumbnail = "public/thumbnails/" + new Date().getTime() + "-" + files.thumbnail.name;
-                fileSystem.rename(oldPathThumbnail, thumbnail, function(err){
+                var vpath = files.video.path;
+                let testFile = fileSystem.readFileSync(vpath);
+                
+                let testBuffer = new Buffer(testFile);
+                
+                ipfs.files.add(testBuffer, function (err, videofile) {
+                    if (err) {
+                        console.log(err);
+                    }else{
+                        console.log(videofile)
+                        filePath = videofile[0].path
+                        var tpath = files.thumbnail.path
+                        let tstFile = fileSystem.readFileSync(tpath);
+                        let tstBuffer = new Buffer(tstFile);
+                        ipfs.files.add(tstBuffer, function (err, thumbfile) {
+                            if (err) {
+                                console.log(err);
+                            }else{
+                            console.log(thumbfile)
+                            thumbnail = thumbfile[0].path
 
-                })
+                            var newPath = "https://gateway.ipfs.io/ipfs/" + videofile[0].path
+                            console.log("HELLO")
+                            console.log(videofile[0].path, thumbfile[0].path, newPath)
+                            getUser(req.session.user.id, function(user){
+                            var currentTime = new Date().getTime();
 
-                var oldPathVideo = files.video.path;
-                var newPath = "public/videos/" + new Date().getTime() + "-" + files.video.name;
-                fileSystem.rename(oldPathVideo, newPath, function(err){
-                    //get user data to save in videos document
-                    getUser(req.session.user.id, function(user){
-                        var currentTime = new Date().getTime();
+                            getVideoDurationInSeconds(newPath).then(async function(duration){
+                                var hours = Math.floor(duration / 60 / 60);
+                                var minutes = Math.floor(duration / 60) - (hours * 60);
+                                var seconds = Math.floor(duration % 60)
 
-                        //get video duration
-                        getVideoDurationInSeconds(newPath).then(async function(duration){
-                            var hours = Math.floor(duration / 60 / 60);
-                            var minutes = Math.floor(duration / 60) - (hours * 60);
-                            var seconds = Math.floor(duration % 60)
-
-                            //insert in database
-                            console.log(hours,minutes,seconds)
-                            d = {
-                                "user":req.session.user.id,
-                                "filePath": newPath,
-                                "thumbnail": thumbnail,
-                                "title": title,
-                                "description": description,
-                                "tags": tags,
-                                "category": category,
-                                "hours": hours,
-                                "minutes": minutes,
-                                "seconds": seconds,
-                                "watch": currentTime,
-                                "views": 0,
-                                "likers": [],
-                                "dislikers": [],
-                                "comments": []
-                            }
-                            console.log(d)
-                            const video = new Video(d)
-                            console.log(video)
-                            await video.save();
-                            const usr = await User.findByIdAndUpdate({_id: req.session.user.id})
-                            usr.videos.push(video);
-                            console.log(usr);
-                            await usr.save()
-                            // const video = new Video(, async function(err, data){
-                            //     await video.save();
-                            //     console.log(video)
-                            //     console.log(data)
-                            //     // insert in users collection too
-                            //     const usr = await User.findByIdAndUpdate({_id: req.session.user.id})
-                            //     usr.videos.push(video);
-                            //     await usr.save()
-                            console.log("Saved")
-
-                            // });
+                                console.log(hours,minutes,seconds)
+                                d = {
+                                    "user":req.session.user.id,
+                                    "filePath": filePath,
+                                    "thumbnail": thumbnail,
+                                    "title": title,
+                                    "description": description,
+                                    "tags": tags,
+                                    "category": category,
+                                    "hours": hours,
+                                    "minutes": minutes,
+                                    "seconds": seconds,
+                                    "watch": currentTime,
+                                    "views": 0,
+                                    "likers": [],
+                                    "dislikers": [],
+                                    "comments": []
+                                }
+                                console.log(d)
+                                const video = new Video(d)
+                                console.log(video)
+                                await video.save();
+                                const usr = await User.findByIdAndUpdate({_id: req.session.user.id})
+                                usr.videos.push(video);
+                                console.log(usr);
+                                await usr.save()
+                                console.log("Saved")
+                            
                             res.redirect("/index")
                         })
-                    });
-                })
-            })
+                    })
+                    }
+                    })
+                    }
+                    })
+
+                
+                // var oldPathThumbnail = files.thumbnail.path;
+                // var thumbnail = "/public/thumbnails/" + new Date().getTime() + "-" + files.thumbnail.name;
+                // fileSystem.rename(oldPathThumbnail, thumbnail)
+
+                
+
+                        })
+                    // });
+                
+            
 
         } else{
             res.redirect("/login")
@@ -711,11 +734,24 @@ http.listen(process.env.PORT || 3000 , function(){
 
     app.post("/change-profile-picture", function(req,res){
         if(req.session.user){
+            let newPath = ''
             var formData = new formidable.IncomingForm();
             formData.parse(req, function (error,fields,files){
                 var oldPath = files.image.path;
-                var newPath = "public/images/profile/" + req.session.user.id + "-" + files.image.name;
-                fileSystem.rename(oldPath, newPath, async function (error){
+                let testFile = fileSystem.readFileSync(oldPath);
+                
+                let testBuffer = new Buffer(testFile);
+                
+                ipfs.files.add(testBuffer, async function (err, file) {
+                    if (err) {
+                        console.log(err);
+                    }else{
+                        console.log(file)
+                        newPath = file[0].path
+                    
+
+                // var newPath = "public/images/profile/" + req.session.user.id + "-" + files.image.name;
+                // fileSystem.rename(oldPath, newPath, async function (error){
                     const usr = await User.findByIdAndUpdate({
                         "_id": req.session.user.id
                     },{
@@ -724,20 +760,33 @@ http.listen(process.env.PORT || 3000 , function(){
                         }
                     })
                     res.redirect("/channel/"+ req.session.user.id)
+                }
                 })
-            })
-        } else{
+            // })
+        })
+    } else{
             res.redirect("/login")
         }
     })
+    
 
     app.post("/change-cover-picture", function(req,res){
         if(req.session.user){
             var formData = new formidable.IncomingForm();
             formData.parse(req, function (error,fields,files){
                 var oldPath = files.image.path;
-                var newPath = "public/images/covers/" + req.session.user.id + "-" + files.image.name;
-                fileSystem.rename(oldPath, newPath, async function (error){
+                let testFile = fileSystem.readFileSync(oldPath);
+                
+                let testBuffer = new Buffer(testFile);
+                
+                ipfs.files.add(testBuffer, async function (err, file) {
+                    if (err) {
+                        console.log(err);
+                    }else{
+                        console.log(file)
+                        newPath = file[0].path
+                // var newPath = "public/images/covers/" + req.session.user.id + "-" + files.image.name;
+                // fileSystem.rename(oldPath, newPath, async function (error){
                     const usr = await User.findByIdAndUpdate({
                         "_id": req.session.user.id
                     },{
@@ -746,7 +795,9 @@ http.listen(process.env.PORT || 3000 , function(){
                         }
                     })
                     res.redirect("/channel/"+ req.session.user.id)
-                })
+                // })
+            }
+        })
             })
         } else{
             res.redirect("/login")

@@ -18,7 +18,7 @@
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
 				<div class="p-4 pt-5">
-        <center><img src="<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+        <center><img src="https://gateway.ipfs.io/ipfs/<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
           <ul class="list-unstyled components mb-5">
 	          <li >
 	            <a href="/index">Home</a>
@@ -141,7 +141,7 @@
       <% liked.forEach(function (video) { %>
         <div class="row">
             <div class="col-2">
-                <img src="/<%= video.post.thumbnail %>" style="width:100%" height="125px" >
+                <img src="https://gateway.ipfs.io/ipfs/<%= video.post.thumbnail %>" style="width:100%" height="125px" >
             </div>
             <div class="col-7">
                 <h6><%= video.post.title %></h6>

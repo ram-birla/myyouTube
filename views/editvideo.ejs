@@ -30,7 +30,7 @@
 		<div class="wrapper d-flex align-items-stretch">
 			<nav id="sidebar">
 				<div class="p-4 pt-5">
-        <center><img src="<%= baseUrl + user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
+        <center><img src="https://gateway.ipfs.io/ipfs/<%= user.image %>" style="border-radius: 50%;" height="100px" width="100px"></center>
           <ul class="list-unstyled components mb-5">
 	          <li >
 	            <a href="/index">Home</a>
@@ -151,7 +151,7 @@
     <div class="container">
         <form method="POST" action="/edit" enctype="multipart/form-data">
             <input type="hidden" name="videoId" value="<%= video._id %>">
-            <img  src="/<%= video.thumbnail %>" height="200px">
+            <img  src="https://gateway.ipfs.io/ipfs/<%= video.thumbnail %>" height="200px">
             <div class="form-group">
                 <label>Select Thumbnail</label>
                 <input type="file" accept="image/*" class="form-control" name="thumbnail">
