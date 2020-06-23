@@ -412,7 +412,7 @@
                 var date = createdAt.getDate() + "";
                 date = date.padStart(2,"0") + " " + months[createdAt.getMonth()] + ", " + createdAt.getFullYear();
                 html += '<div class="row">';
-                  html += '<div class="col-8"><img  src="/' + videos[a].thumbnail +'" height="125px" width="200px" style="width:100%; height:100%;"/></div>';
+                  html += '<div class="col-8"><img  src="https://gateway.ipfs.io/ipfs/' + videos[a].thumbnail +'" height="125px" width="200px" style="width:100%; height:100%;"/></div>';
                   html += '<div class="col-4">';
                   html += '<h6><a href="/watch/' + videos[a]._id + '">' + videos[a].title +'</a><br/>'+ videos[a].views+ ' views</h6><br/>'+ '<p>' + videos[a].minutes + ":" + videos[a].seconds + "</p>";
                 html += '</div></div><hr/>';
