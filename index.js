@@ -1034,6 +1034,11 @@ http.listen(process.env.PORT || 3000 , function(){
             "_id":req.params.videoId,
             "playlist": req.params.playlistId
         }).populate('user')
+        
+        const ch = await Subscriber.findOne({"channel":vid.user._id,"subscriber":req.session.user.id})
+        if (ch != null){
+            var chksubs = true
+        }
         if(vid == null){
             res.send("video Does not exist")
         } else {
@@ -1060,6 +1065,7 @@ http.listen(process.env.PORT || 3000 , function(){
                 "playlistId": req.params.playlistId,
                 "comments": cmnt,
                 "user": user,
+                "chksubs":chksubs
             })
         }
     })
