@@ -83,9 +83,7 @@
 
       function postReply(form){
         var commentId = form.commentId.value;
-        alert(commentId)
         var reply = form.reply.value;
-        alert(reply)
         var ajax = new XMLHttpRequest();
         ajax.open("POST", "/do-reply", true);
         ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
