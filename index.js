@@ -465,11 +465,19 @@ http.listen(process.env.PORT || 3000 , function(){
                 })
                 console.log(cmnt) 
                 await cmnt.save()
-                const vid = await Video.findOneAndUpdate({"_id": req.body.videoId})
-                vid.comments.push(cmnt)
-                await vid.save()
+                const vid = await Video.findByIdAndUpdate({
+                    "_id": req.body.videoId
+                },{
+                   $push:{
+                       "comments": cmnt._id
+                   } 
+                })
+                // const vid = await Video.findOneAndUpdate({"_id": req.body.videoId})
+                // vid.comments.push(cmnt)
+                // await vid.save()
                 // find channelId
                 var channelId = vid.user._id
+                console.log(channelId)
                 //create a notification
                 const notify = new Notification({
                     "typ": "New Comment",
@@ -481,7 +489,7 @@ http.listen(process.env.PORT || 3000 , function(){
                 })
                 await notify.save()
                 // send notification to video publisher
-                
+                console.log("1111111111111")
                 usr = await User.findByIdAndUpdate({ "_id": channelId})
                 usr.notifications.push(notify)
                 await usr.save();
@@ -543,15 +551,18 @@ http.listen(process.env.PORT || 3000 , function(){
         if(req.session.user){
             var r = req.body.reply;
             var commentId = req.body.commentId;
+            console.log(r, commentId)
             const usr = await User.findById({"_id":req.session.user.id})
-            const vid = await Video.findOne({"comments":commentId})
+            const vid = await Video.findOne({"comments": req.body.commentId})
+            console.log(vid)
             const cmnt = await Comment.findById({"_id":commentId})
             const rply = new Replies({
                 "content": r,
-                "comment": cmnt,
-                "post": vid,
-                "user": usr
+                "comment": cmnt._id,
+                "post": vid._id,
+                "user": usr._id
             })
+            console.log(rply)
             re = await rply.save();
             await Comment.updateOne({"_id":commentId},
                 {$push:

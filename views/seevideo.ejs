@@ -83,7 +83,9 @@
 
       function postReply(form){
         var commentId = form.commentId.value;
+        alert(commentId)
         var reply = form.reply.value;
+        alert(reply)
         var ajax = new XMLHttpRequest();
         ajax.open("POST", "/do-reply", true);
         ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -93,7 +95,7 @@
             var res = JSON.parse(this.responseText);
             var a = "replis-"+ commentId;
             var html = "";
-            html += '<div class="row"><div class="col-1"><img src="https://gateway.ipfs.io/ipfs/' + res.rp.user.image + '" height="20px" width="20px" style="border-radius:50%;" alt="..."></div> <div class="col-11"style="font-size: x-large;"><h5 ><b>' + res.rp.user.name + '</b></h5><br/>' + form.reply.value + '</div>';
+            html += '<div class="row"><div class="col-1"><img src="/' + res.rp.user.image + '" height="20px" width="20px" style="border-radius:50%;" alt="..."></div> <div class="col-11"style="font-size: x-large;"><h5 ><b>' + res.rp.user.name + '</b></h5><br/>' + form.reply.value + '</div>';
             document.getElementById(a).innerHTML += html;
             form.reply.value = "";
             
@@ -542,7 +544,7 @@
                   console.log(res.user.id,res.user._id,res.user.name)
                   var html = "";
                   html += '<div class="row"><div class="col-1">';
-                    html += ' <img src="https://gateway.ipfs.io/ipfs/'+ res.user.image  + '" height="50px" width="50px" style="border-radius:50%;" alt="...">';
+                    html += ' <img src="/'+ res.user.image  + '" height="50px" width="50px" style="border-radius:50%;" alt="...">';
                     html += '</div><div class="col-11">'
                       html += '<h5><b>'+  res.user.name + '</b></h5><br/>';
                       html +=  self.comment.value;
